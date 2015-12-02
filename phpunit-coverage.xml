@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit colors="true" bootstrap="test/bootstrap.php">
+    <listeners>
+        <listener class="JohnKary\PHPUnit\Listener\SpeedTrapListener" />
+    </listeners>
+    <testsuites>
+        <testsuite name="All Tests">
+            <directory>test/</directory>
+        </testsuite>
+    </testsuites>
+    <php>
+        <ini name="xdebug.default_enable" value="1" />
+        <ini name="xdebug.enable_coverage" value="1" />
+        <ini name="xdebug.remote_autostart" value="0" />
+        <ini name="xdebug.remote_enable" value="0" />
+        <ini name="xdebug.overload_var_dump" value="0" />
+        <ini name="xdebug.show_mem_delta" value="0" />
+    </php>
+    <filter> <!-- Exclude dist, test, and third-party library files from coverage analysis -->
+        <blacklist>
+            <directory suffix=".php">dist/</directory>
+            <directory suffix=".php">vendor</directory>
+            <directory suffix=".php">test/</directory>
+        </blacklist>
+        <whitelist>
+            <directory suffix=".php">./</directory>
+            <exclude>
+                <directory suffix=".php">dist/</directory>
+                <directory suffix=".php">vendor</directory>
+                <directory suffix=".php">test/</directory>
+            </exclude>
+        </whitelist>
+    </filter>
+    <logging>
+        <log type="coverage-html" target="./test/code-coverage/"/>
+        <log type="junit" target="./test/code-coverage/logfile.xml" logIncompleteSkipped="true"/>
+    </logging>
+</phpunit>

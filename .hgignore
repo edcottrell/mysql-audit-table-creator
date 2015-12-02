@@ -1,0 +1,7 @@
+syntax: glob
+test-credentials.php
+.idea
+vendor
+node_modules
+test/code-coverage
+log.txt

@@ -1,0 +1,22 @@
+{
+  "name": "CereblitzMySQLAuditTableCreator",
+  "version": "0.0.1",
+  "database_version": 1,
+  "description": "Cereblitz MySQL Audit Table Creator",
+  "author": "Cereblitz LLC",
+  "license": "Cereblitz Cart EULA",
+  "devDependencies": {
+    "chai": "^1.10.0",
+    "grunt": "^0.4.5",
+    "grunt-contrib-clean": "^0.6.0",
+    "grunt-contrib-copy": "^0.7.0",
+    "grunt-contrib-watch": "^0.6.1",
+    "grunt-sync": "^0.4.1",
+    "istanbul": "^0.3.2",
+    "karma": "^0.12.24",
+    "mocha": "^2.0.1",
+    "moment": "^2.10.6",
+    "require": "^2.4.20"
+  },
+  "private": true
+}
