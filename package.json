@@ -1,6 +1,6 @@
 {
-  "name": "CereblitzMySQLAuditTableCreator",
-  "version": "0.0.1",
+  "name": "edcottrell/mysql-audit-table-creator-php",
+  "version": "0.0.2",
   "database_version": 1,
   "description": "Cereblitz MySQL Audit Table Creator",
   "author": "Cereblitz LLC",
