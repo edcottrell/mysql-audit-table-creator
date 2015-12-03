@@ -1,6 +1,5 @@
 {
   "name": "edcottrell/mysql-audit-table-creator-php",
-  "version": "0.0.3",
   "description": "Cereblitz MySQL Audit Table Creator",
   "author": "Cereblitz LLC",
   "license": "Cereblitz Cart EULA",
