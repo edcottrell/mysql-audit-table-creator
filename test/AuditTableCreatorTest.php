@@ -171,6 +171,48 @@ class AuditTableCreatorTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * Test that the triggers all work correctly for a table with a UNIQUE KEY
+     */
+    private function performTriggerTests_TableWithUniqueKey()
+    {
+        self::$db->query("INSERT INTO `table_with_unique_key` SET `foo` = 'Hello', `bar` = 'World'");
+        $result = self::$db->query("SELECT COUNT(*) FROM `audit_table_with_unique_key`");
+        $row = $result->fetch_array();
+        $this->assertEquals(1, $row[0]);
+
+        self::$db->query("INSERT INTO `table_with_unique_key` SET `foo` = 'Hello', `bar` = 'Montana'");
+        $result = self::$db->query("SELECT COUNT(*) FROM `audit_table_with_unique_key`");
+        $row = $result->fetch_array();
+        $this->assertEquals(2, $row[0]);
+
+        self::$db->query("UPDATE `table_with_unique_key` SET `foo` = 'Goodbye' WHERE `foo` = 'Hello'");
+        $result = self::$db->query("SELECT COUNT(*) FROM `audit_table_with_unique_key`");
+        $row = $result->fetch_array();
+        $this->assertEquals(4, $row[0]);
+
+        self::$db->query("DELETE FROM `table_with_unique_key` WHERE `foo` = 'Goodbye'");
+        $result = self::$db->query("SELECT COUNT(*) FROM `audit_table_with_unique_key`");
+        $row = $result->fetch_array();
+        $this->assertEquals(6, $row[0]);
+
+        $result = self::$db->query("SELECT COUNT(*) FROM `audit_table_with_unique_key` WHERE `audit_event` = 'insert'");
+        $row = $result->fetch_array();
+        $this->assertEquals(2, $row[0]);
+
+        $result = self::$db->query("SELECT COUNT(*) FROM `audit_table_with_unique_key` WHERE `audit_event` = 'update'");
+        $row = $result->fetch_array();
+        $this->assertEquals(2, $row[0]);
+
+        $result = self::$db->query("SELECT COUNT(*) FROM `audit_table_with_unique_key` WHERE `audit_event` = 'delete'");
+        $row = $result->fetch_array();
+        $this->assertEquals(2, $row[0]);
+
+        $result = self::$db->query("SELECT COUNT(*) FROM `audit_table_with_unique_key` WHERE `foo` = 'Goodbye' AND `bar` = 'World'");
+        $row = $result->fetch_array();
+        $this->assertGreaterThanOrEqual(2, $row[0]);
+    }
+
+    /**
      * Creates a connection to the test database
      * @throws Exception
      */
@@ -192,7 +234,9 @@ class AuditTableCreatorTest extends \PHPUnit_Framework_TestCase
               `audit_table_with_compound_primary`,
               `table_with_no_primary`,
               `audit_table_with_no_primary`,
-              `placeholder`");
+              `placeholder`,
+              `table_with_unique_key`,
+              `audit_table_with_unique_key`");
         }
         AuditTableCreatorDbTestConnection::disconnect();
         self::$db = null;
@@ -289,7 +333,7 @@ class AuditTableCreatorTest extends \PHPUnit_Framework_TestCase
     /**
      * Test creation of the audit table and use of the triggers on an InnoDB table with an AUTO_INCREMENT column
      */
-    public function testGenerateSQLStatements_InnoDbTableWithAutoIncrement()
+    public function testGenerateSQLStatements_WithAutoIncrement_InnoDbTable()
     {
         self::$db->query('DROP TABLE IF EXISTS `audit_table_with_auto_increment`, `table_with_auto_increment`');
         self::$db->query("CREATE TABLE IF NOT EXISTS `table_with_auto_increment` (
@@ -311,7 +355,7 @@ class AuditTableCreatorTest extends \PHPUnit_Framework_TestCase
     /**
      * Test creation of the audit table and use of the triggers on a MyISAM table with an AUTO_INCREMENT column
      */
-    public function testGenerateSQLStatements_MyISAMTableWithAutoIncrement()
+    public function testGenerateSQLStatements_WithAutoIncrement_MyISAMTable()
     {
         self::$db->query('DROP TABLE IF EXISTS `audit_table_with_auto_increment`, `table_with_auto_increment`');
         self::$db->query("CREATE TABLE IF NOT EXISTS `table_with_auto_increment` (
@@ -333,7 +377,7 @@ class AuditTableCreatorTest extends \PHPUnit_Framework_TestCase
     /**
      * Test creation of the audit table and use of the triggers on an InnoDB table with a compound primary key
      */
-    public function testGenerateSQLStatements_InnoDbTableWithCompoundPrimary()
+    public function testGenerateSQLStatements_WithCompoundPrimary_InnoDbTable()
     {
         self::$db->query('DROP TABLE IF EXISTS `audit_table_with_compound_primary`, `table_with_compound_primary`');
         self::$db->query("CREATE TABLE IF NOT EXISTS `table_with_compound_primary` (
@@ -356,7 +400,7 @@ class AuditTableCreatorTest extends \PHPUnit_Framework_TestCase
     /**
      * Test creation of the audit table and use of the triggers on a MyISAM table with a compound primary key
      */
-    public function testGenerateSQLStatements_MyISAMTableWithCompoundPrimary()
+    public function testGenerateSQLStatements_WithCompoundPrimary_MyISAMTable()
     {
         self::$db->query('DROP TABLE IF EXISTS `audit_table_with_compound_primary`, `table_with_compound_primary`');
         self::$db->query("CREATE TABLE IF NOT EXISTS `table_with_compound_primary` (
@@ -379,7 +423,7 @@ class AuditTableCreatorTest extends \PHPUnit_Framework_TestCase
     /**
      * Test creation of the audit table and use of the triggers on an InnoDB table with no primary key
      */
-    public function testGenerateSQLStatements_InnoDbTableWithNoPrimary()
+    public function testGenerateSQLStatements_WithNoPrimary_InnoDbTable()
     {
         self::$db->query('DROP TABLE IF EXISTS `audit_table_with_no_primary`, `table_with_no_primary`');
         self::$db->query("CREATE TABLE IF NOT EXISTS `table_with_no_primary` (
@@ -400,7 +444,7 @@ class AuditTableCreatorTest extends \PHPUnit_Framework_TestCase
     /**
      * Test creation of the audit table and use of the triggers on a MyISAM table with no primary key
      */
-    public function testGenerateSQLStatements_MyISAMTableWithNoPrimary()
+    public function testGenerateSQLStatements_WithNoPrimary_MyISAMTable()
     {
         self::$db->query('DROP TABLE IF EXISTS `audit_table_with_no_primary`, `table_with_no_primary`');
         self::$db->query("CREATE TABLE IF NOT EXISTS `table_with_no_primary` (
@@ -416,6 +460,66 @@ class AuditTableCreatorTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($this->checkTableExists('audit_table_with_no_primary'));
 
         $this->performTriggerTests_TableWithNoPrimary(); // runs additional tests to validate the triggers
+    }
+
+    /**
+     * Test creation of the audit table and use of the triggers on a MyISAM table with a UNIQUE KEY
+     */
+    public function testGenerateSQLStatements_WithUniqueKey_MyISAMTable()
+    {
+        self::$db->query('DROP TABLE IF EXISTS `audit_table_with_unique_key`, `table_with_unique_key`');
+        self::$db->query("CREATE TABLE IF NOT EXISTS `table_with_unique_key` (
+          `id` INT NOT NULL AUTO_INCREMENT,
+          `foo` CHAR(20),
+          `bar` CHAR(20),
+          PRIMARY KEY (`id`),
+          UNIQUE KEY `fubar` (`foo`, `bar`)
+          ) ENGINE=MyISAM");
+
+        $this->assertTrue($this->checkTableExists('table_with_unique_key'));
+
+        $atc = new AuditTableCreator('table_with_unique_key', self::$db);
+        $atc->execute();
+
+        $this->assertTrue($this->checkTableExists('audit_table_with_unique_key'));
+
+        $result = self::$db->query("SHOW CREATE TABLE `audit_table_with_unique_key`");
+        $row = $result->fetch_array();
+        $this->assertRegExp("/\bKEY `fubar`/", $row[1]);
+        $this->assertNotRegExp("/\bUNIQUE\b/", $row[1]);
+        $result->close();
+
+        $this->performTriggerTests_TableWithUniqueKey(); // runs additional tests to validate the triggers
+    }
+
+    /**
+     * Test creation of the audit table and use of the triggers on an InnoDB table with a UNIQUE KEY
+     */
+    public function testGenerateSQLStatements_WithUniqueKey_InnoDBTable()
+    {
+        self::$db->query('DROP TABLE IF EXISTS `audit_table_with_unique_key`, `table_with_unique_key`');
+        self::$db->query("CREATE TABLE IF NOT EXISTS `table_with_unique_key` (
+          `id` INT NOT NULL AUTO_INCREMENT,
+          `foo` CHAR(20),
+          `bar` CHAR(20),
+          PRIMARY KEY (`id`),
+          UNIQUE KEY `fubar` (`foo`, `bar`)
+          ) ENGINE=InnoDB");
+
+        $this->assertTrue($this->checkTableExists('table_with_unique_key'));
+
+        $atc = new AuditTableCreator('table_with_unique_key', self::$db);
+        $atc->execute();
+
+        $this->assertTrue($this->checkTableExists('audit_table_with_unique_key'));
+
+        $result = self::$db->query("SHOW CREATE TABLE `audit_table_with_unique_key`");
+        $row = $result->fetch_array();
+        $this->assertRegExp("/\bKEY `fubar`/", $row[1]);
+        $this->assertNotRegExp("/\bUNIQUE\b/", $row[1]);
+        $result->close();
+
+        $this->performTriggerTests_TableWithUniqueKey(); // runs additional tests to validate the triggers
     }
 
     /**

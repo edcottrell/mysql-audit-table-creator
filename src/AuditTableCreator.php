@@ -79,6 +79,9 @@ class AuditTableCreator
     /** @var string */
     private $table = null;
 
+    /** @var string[]|null */
+    private $uniqueKeys = null;
+
 
     /**
      * @param string $table The table being audited
@@ -119,19 +122,24 @@ class AuditTableCreator
         if ($this->autoIncrementColumn) {
             $autoIncrementColumnName = preg_replace('/^\s*`([^`]+)`.*/', '$1', $this->autoIncrementColumn);
             $formerAutoIncrementColumnDefinitionWithoutAI = preg_replace('/\s+AUTO_INCREMENT/i', '', $this->autoIncrementColumn);
-            $sql .= "CHANGE COLUMN `$autoIncrementColumnName` $formerAutoIncrementColumnDefinitionWithoutAI,\n";
+            $sql .= "    CHANGE COLUMN `$autoIncrementColumnName` $formerAutoIncrementColumnDefinitionWithoutAI,\n";
         }
         if ($this->primaryKeyDefinition) {
-            $sql .= "DROP PRIMARY KEY,\n";
+            $sql .= "    DROP PRIMARY KEY,\n";
         }
-        $sql .= "ADD COLUMN `audit_id` INT AUTO_INCREMENT NOT NULL FIRST,
-                ADD PRIMARY KEY (`audit_id`),
-                ADD COLUMN `audit_datetime` DATETIME NOT NULL AFTER `audit_id`,
-                ADD COLUMN `audit_event` CHAR(7) NOT NULL DEFAULT 'insert' AFTER `audit_datetime`";
+        $sql .= "    ADD COLUMN `audit_id` INT AUTO_INCREMENT NOT NULL FIRST,
+    ADD PRIMARY KEY (`audit_id`),
+    ADD COLUMN `audit_datetime` DATETIME NOT NULL AFTER `audit_id`,
+    ADD COLUMN `audit_event` CHAR(7) NOT NULL DEFAULT 'insert' AFTER `audit_datetime`";
         if ($this->primaryKeyDefinition) {
             $sql .= ",
-                ADD COLUMN `audit_item_version` INT NULL AFTER `audit_event`,
-                ADD KEY `real_primary_key` ({$this->primaryKeyDefinition})";
+    ADD COLUMN `audit_item_version` INT NULL AFTER `audit_event`,
+    ADD KEY `real_primary_key` ({$this->primaryKeyDefinition})";
+        }
+        foreach ($this->uniqueKeys as $uniqueKey) {
+            $sql .= ",
+    DROP " . preg_replace("/(KEY\s*`[^`]+`).+/", "\$1", $uniqueKey) . ",
+    ADD $uniqueKey";
         }
 
         $this->sqlStatements[] = $sql;
@@ -188,22 +196,22 @@ class AuditTableCreator
         $subqueryWhere = $this->getSubqueryWhereConditionForAuditTableInsertion("OLD");
         $fields = $this->getFieldsForAuditTableInsert("OLD");
         $sql = "CREATE TRIGGER `audit_{$this->table}_deletes` BEFORE DELETE ON `{$this->table}`
-                FOR EACH ROW
-                    BEGIN
-                        INSERT INTO `{$this->auditTableName}`
-                        SET `audit_datetime` = NOW(),
-                            `audit_event` = 'delete'," .
-                            ($this->primaryKeyDefinition
-                                ? "`audit_item_version` = IFNULL(
-                                (
-                                    SELECT MAX(`audit_item_version`) + 1
-                                    FROM `{$this->auditTableName}` `source`
-                                    WHERE $subqueryWhere
-                                ),
-                                1),"
-                                : "") . "
-                            $fields;
-                    END;";
+    FOR EACH ROW
+    BEGIN
+        INSERT INTO `{$this->auditTableName}`
+        SET `audit_datetime` = NOW(),
+            `audit_event` = 'delete'," .
+            ($this->primaryKeyDefinition
+                ? "`audit_item_version` = IFNULL(
+                (
+                    SELECT MAX(`audit_item_version`) + 1
+                    FROM `{$this->auditTableName}` `source`
+                    WHERE $subqueryWhere
+                ),
+                1),"
+                : "") . "
+            $fields;
+    END";
         $this->sqlStatements[] = $sql;
         return $sql;
     }
@@ -219,22 +227,22 @@ class AuditTableCreator
         $subqueryWhere = $this->getSubqueryWhereConditionForAuditTableInsertion("NEW");
         $fields = $this->getFieldsForAuditTableInsert("NEW");
         $sql = "CREATE TRIGGER `audit_{$this->table}_inserts` AFTER INSERT ON `{$this->table}`
-                FOR EACH ROW
-                    BEGIN
-                        INSERT INTO `{$this->auditTableName}`
-                        SET `audit_datetime` = NOW(),
-                            `audit_event` = 'insert'," .
-                            ($this->primaryKeyDefinition
-                                ? "`audit_item_version` = IFNULL(
-                                                (
-                                                    SELECT MAX(`audit_item_version`) + 1
-                                                    FROM `{$this->auditTableName}` `source`
-                                                    WHERE $subqueryWhere
-                                                ),
-                                                1),"
-                                : "") . "
-                            $fields;
-                    END;";
+    FOR EACH ROW
+    BEGIN
+        INSERT INTO `{$this->auditTableName}`
+        SET `audit_datetime` = NOW(),
+            `audit_event` = 'insert'," .
+            ($this->primaryKeyDefinition
+                ? "`audit_item_version` = IFNULL(
+                                (
+                                    SELECT MAX(`audit_item_version`) + 1
+                                    FROM `{$this->auditTableName}` `source`
+                                    WHERE $subqueryWhere
+                                ),
+                                1),"
+                : "") . "
+            $fields;
+    END";
         $this->sqlStatements[] = $sql;
         return $sql;
     }
@@ -250,22 +258,22 @@ class AuditTableCreator
         $subqueryWhere = $this->getSubqueryWhereConditionForAuditTableInsertion("OLD");
         $fields = $this->getFieldsForAuditTableInsert("NEW");
         $sql = "CREATE TRIGGER `audit_{$this->table}_updates` BEFORE UPDATE ON `{$this->table}`
-                FOR EACH ROW
-                    BEGIN
-                        INSERT INTO `{$this->auditTableName}`
-                        SET `audit_datetime` = NOW(),
-                            `audit_event` = 'update'," .
-                            ($this->primaryKeyDefinition
-                                ? "`audit_item_version` = IFNULL(
-                                                (
-                                                    SELECT MAX(`audit_item_version`) + 1
-                                                    FROM `{$this->auditTableName}` `source`
-                                                    WHERE $subqueryWhere
-                                                ),
-                                                1),"
-                                : "") . "
-                            $fields;
-                    END;";
+    FOR EACH ROW
+    BEGIN
+        INSERT INTO `{$this->auditTableName}`
+        SET `audit_datetime` = NOW(),
+            `audit_event` = 'update'," .
+            ($this->primaryKeyDefinition
+                ? "`audit_item_version` = IFNULL(
+                                (
+                                    SELECT MAX(`audit_item_version`) + 1
+                                    FROM `{$this->auditTableName}` `source`
+                                    WHERE $subqueryWhere
+                                ),
+                                1),"
+                : "") . "
+            $fields;
+    END";
         $this->sqlStatements[] = $sql;
         return $sql;
     }
@@ -403,6 +411,7 @@ class AuditTableCreator
         $this->getMainTableAutoIncrementColumn();
         $this->getMainTablePrimaryKey();
         $this->getMainTableColumnNames();
+        $this->getMainTableUniqueKeys();
 
         // create the audit table and tweak it as needed
         $this->createAuditTable();
@@ -487,5 +496,24 @@ class AuditTableCreator
             $this->primaryKeyDefinition = $matches[1];
         }
         return $this->primaryKeyDefinition;
+    }
+
+    /**
+     * Get the names and definitions of any UNIQUE KEYs in the table to be audited. We need this
+     * because the unique data in that table almost certainly will not be unique in the audit table.
+     * So, we will drop each UNIQUE KEY in the audit table immediately after we create the table and
+     * replace that UNIQUE KEY with a vanilla KEY with the same definition.
+     * Will return an array of strings like array('id', 'first_name', 'last_name', 'balance', ...)
+     *
+     * @returns string[]
+     * @since Version 0.0.1
+     */
+    private function getMainTableUniqueKeys()
+    {
+        preg_match_all("~^\s*UNIQUE\s+(KEY .+?),?$~m", $this->mainTableCreateStatement, $matches);
+        if (!empty($matches)) {
+            $this->uniqueKeys = $matches[1];
+        }
+        return $this->uniqueKeys;
     }
 }
