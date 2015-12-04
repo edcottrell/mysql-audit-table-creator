@@ -309,6 +309,7 @@ class AuditTableCreator
     public function execute($logFile = null)
     {
         $this->generateSQLStatements();
+        $file = null;
 
         if (!empty($logFile)) {
             $logFile = preg_replace('~\\\\~', DIRECTORY_SEPARATOR, $logFile);
@@ -318,32 +319,44 @@ class AuditTableCreator
         }
 
         foreach ($this->sqlStatements as $sql) {
-            $errorDetails = null;
-            if (isset($file)) {
-                fwrite($file, "Executing SQL:\n$sql\n");
-            }
-            $result = $this->conn->query($sql);
-            if (!empty($this->conn->errno)) {
-                $errorDetails = "Error in MySQL Query:\n" .
-                    "Error Number: {$this->conn->errno}\n" .
-                    "Error Message: {$this->conn->error}\n" .
-                    "SQL Statement:\n    $sql";
-            } elseif (false === $result && method_exists($this->conn, 'errorInfo')) {
-                $errorInfo = $this->conn->errorInfo();
-                $errorDetails = "Error in MySQL Query:\n" .
-                    "SQL State: {$errorInfo[0]}\n" .
-                    "Error Number: {$errorInfo[1]}\n" .
-                    "Error Message: {$errorInfo[2]}\n" .
-                    "SQL Statement:\n    $sql";
-            }
-            if (null !== $errorDetails) {
-                if (isset($file)) {
-                    fwrite($file, $errorDetails . "\n");
-                }
-                throw new \Exception($errorDetails);
-            }
+            $this->executeOneStatement($sql, $file);
         }
         return true;
+    }
+
+    /**
+     * Execute a single statement from the generated statements
+     *
+     * @param string $sql The statement
+     * @param null|\resource $file A handle to a log file
+     * @throws \Exception
+     */
+    private function executeOneStatement($sql, $file = null)
+    {
+        $errorDetails = null;
+        if (isset($file)) {
+            fwrite($file, "Executing SQL:\n$sql\n");
+        }
+        $result = $this->conn->query($sql);
+        if (!empty($this->conn->errno)) {
+            $errorDetails = "Error in MySQL Query:\n" .
+                "Error Number: {$this->conn->errno}\n" .
+                "Error Message: {$this->conn->error}\n" .
+                "SQL Statement:\n    $sql";
+        } elseif (false === $result && method_exists($this->conn, 'errorInfo')) {
+            $errorInfo = $this->conn->errorInfo();
+            $errorDetails = "Error in MySQL Query:\n" .
+                "SQL State: {$errorInfo[0]}\n" .
+                "Error Number: {$errorInfo[1]}\n" .
+                "Error Message: {$errorInfo[2]}\n" .
+                "SQL Statement:\n    $sql";
+        }
+        if (null !== $errorDetails) {
+            if (isset($file)) {
+                fwrite($file, $errorDetails . "\n");
+            }
+            throw new \Exception($errorDetails);
+        }
     }
 
     /**
