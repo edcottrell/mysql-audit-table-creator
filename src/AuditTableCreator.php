@@ -412,6 +412,8 @@ class AuditTableCreator
         $this->createInsertTrigger();
         $this->createUpdateTrigger();
         $this->createDeleteTrigger();
+
+        return $this->sqlStatements;
     }
 
     /**
