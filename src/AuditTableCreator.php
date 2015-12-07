@@ -79,6 +79,11 @@ class AuditTableCreator
     /** @var string */
     private $table = null;
 
+    /** @var bool Throw an error if the audit table exists? By default, this is false, and the CREATE TABLE statement
+     * uses IF NOT EXISTS
+     */
+    private static $throwErrorIfAuditTableExists = false;
+
     /** @var string[]|null */
     private $uniqueKeys = null;
 
@@ -180,7 +185,8 @@ class AuditTableCreator
     private function createAuditTable()
     {
         /** @noinspection SqlNoDataSourceInspection */
-        $sql = "CREATE TABLE `{$this->auditTableName}` LIKE `{$this->table}`";
+        $ifNotExistsClause = self::$throwErrorIfAuditTableExists ? "" : "IF NOT EXISTS ";
+        $sql = "CREATE TABLE $ifNotExistsClause`{$this->auditTableName}` LIKE `{$this->table}`";
         $this->sqlStatements[] = $sql;
         return $sql;
     }
@@ -406,6 +412,15 @@ class AuditTableCreator
     }
 
     /**
+     * @return mixed
+     * @codeCoverageIgnore
+     */
+    public static function getThrowErrorIfAuditTableExists()
+    {
+        return self::$throwErrorIfAuditTableExists;
+    }
+
+    /**
      * Generate the SQL statements to create the audit table and set it up
      *
      * @returns string[] An array of the SQL statements
@@ -528,5 +543,14 @@ class AuditTableCreator
             $this->uniqueKeys = $matches[1];
         }
         return $this->uniqueKeys;
+    }
+
+    /**
+     * @param mixed $throwErrorIfAuditTableExists
+     * @codeCoverageIgnore
+     */
+    public static function setThrowErrorIfAuditTableExists($throwErrorIfAuditTableExists)
+    {
+        self::$throwErrorIfAuditTableExists = $throwErrorIfAuditTableExists;
     }
 }
