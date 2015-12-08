@@ -52,6 +52,18 @@ namespace Cereblitz;
  */
 class AuditTableCreator
 {
+    /** @var bool */
+    private $auditDeleteTriggerExists = false;
+
+    /** @var bool */
+    private $auditInsertTriggerExists = false;
+
+    /** @var bool */
+    private $auditUpdateTriggerExists = false;
+
+    /** @var bool */
+    private $auditTableExists = false;
+
     /** @var string */
     private $auditTableName = null;
 
@@ -82,7 +94,12 @@ class AuditTableCreator
     /** @var bool Throw an error if the audit table exists? By default, this is false, and the CREATE TABLE statement
      * uses IF NOT EXISTS
      */
-    private static $throwErrorIfAuditTableExists = false;
+    private $throwErrorIfAuditTableExists = false;
+
+    /** @var bool Throw an error if the audit table exists? By default, this is false, and the CREATE TABLE statement
+     * uses IF NOT EXISTS
+     */
+    private $throwErrorIfTriggersExist = false;
 
     /** @var string[]|null */
     private $uniqueKeys = null;
@@ -153,8 +170,8 @@ class AuditTableCreator
 
     /**
      * Check that the base table exists. We can't very well audit it if it doesn't!
-     *
-     * @returns boolean True if success; throws an error otherwise
+     * @return bool True if success; throws an error otherwise
+     * @throws \Exception
      * @since Version 0.0.1
      */
     private function checkTableExists()
@@ -166,6 +183,10 @@ class AuditTableCreator
         while ($row) {
             if ($row[0] === $this->table) {
                 $baseTableExists = true;
+            } elseif ($row[0] === $this->auditTableName) {
+                $this->auditTableExists = true;
+            }
+            if ($baseTableExists && $this->auditTableExists) {
                 break;
             }
             $row = call_user_func(array($result, $this->fetchMethod));
@@ -173,7 +194,43 @@ class AuditTableCreator
         if (!$baseTableExists) {
             throw new \UnexpectedValueException('Base table does not exist');
         }
+        if ($this->auditTableExists && $this->throwErrorIfAuditTableExists) {
+            throw new \Exception('Audit table already exists');
+        }
         return true;
+    }
+
+    /**
+     * Check whether the triggers exist.
+     *
+     * @throws \Exception
+     */
+    private function checkWhetherTriggersExist()
+    {
+        $result = $this->conn->query("SHOW TRIGGERS");
+        $row = call_user_func(array($result, $this->fetchMethod));
+        while ($row) {
+            $trigger = $row[0];
+            if ("audit_{$this->table}_deletes" === $trigger) {
+                $this->auditDeleteTriggerExists = true;
+            } elseif ("audit_{$this->table}_inserts" === $trigger) {
+                $this->auditInsertTriggerExists = true;
+            } elseif ("audit_{$this->table}_updates" === $trigger) {
+                $this->auditUpdateTriggerExists = true;
+            }
+            $row = call_user_func(array($result, $this->fetchMethod));
+        }
+        if ($this->throwErrorIfTriggersExist) {
+            if ($this->auditDeleteTriggerExists) {
+                throw new \Exception("Audit trigger for deletions on table {$this->table} already exists");
+            }
+            if ($this->auditInsertTriggerExists) {
+                throw new \Exception("Audit trigger for insertions on table {$this->table} already exists");
+            }
+            if ($this->auditUpdateTriggerExists) {
+                throw new \Exception("Audit trigger for updates on table {$this->table} already exists");
+            }
+        }
     }
 
     /**
@@ -185,7 +242,7 @@ class AuditTableCreator
     private function createAuditTable()
     {
         /** @noinspection SqlNoDataSourceInspection */
-        $ifNotExistsClause = self::$throwErrorIfAuditTableExists ? "" : "IF NOT EXISTS ";
+        $ifNotExistsClause = $this->throwErrorIfAuditTableExists ? "" : "IF NOT EXISTS ";
         $sql = "CREATE TABLE $ifNotExistsClause`{$this->auditTableName}` LIKE `{$this->table}`";
         $this->sqlStatements[] = $sql;
         return $sql;
@@ -412,15 +469,6 @@ class AuditTableCreator
     }
 
     /**
-     * @return mixed
-     * @codeCoverageIgnore
-     */
-    public static function getThrowErrorIfAuditTableExists()
-    {
-        return self::$throwErrorIfAuditTableExists;
-    }
-
-    /**
      * Generate the SQL statements to create the audit table and set it up
      *
      * @returns string[] An array of the SQL statements
@@ -431,8 +479,11 @@ class AuditTableCreator
         // need this before continuing - otherwise, we can't fetch results
         $this->determineFetchMethod();
 
-        // make sure the base table exists
+        // make sure the base table exists and see if the audit table exists
         $this->checkTableExists();
+
+        // see if any of the triggers exist
+        $this->checkWhetherTriggersExist();
 
         // get the base table CREATE statement and parse important pieces
         $this->getMainTableCreateStatement();
@@ -446,9 +497,15 @@ class AuditTableCreator
         $this->addAuditTableColumnsAndKeys();
 
         // set up the triggers to do the logging of changes
-        $this->createInsertTrigger();
-        $this->createUpdateTrigger();
-        $this->createDeleteTrigger();
+        if (!$this->auditInsertTriggerExists) {
+            $this->createInsertTrigger();
+        }
+        if (!$this->auditDeleteTriggerExists) {
+            $this->createDeleteTrigger();
+        }
+        if (!$this->auditUpdateTriggerExists) {
+            $this->createUpdateTrigger();
+        }
 
         return $this->sqlStatements;
     }
@@ -546,11 +603,36 @@ class AuditTableCreator
     }
 
     /**
-     * @param mixed $throwErrorIfAuditTableExists
+     * @return mixed
      * @codeCoverageIgnore
      */
-    public static function setThrowErrorIfAuditTableExists($throwErrorIfAuditTableExists)
+    public function getThrowErrorIfAuditTableExists()
     {
-        self::$throwErrorIfAuditTableExists = $throwErrorIfAuditTableExists;
+        return $this->throwErrorIfAuditTableExists;
+    }
+
+    /**
+     * @return boolean
+     * @codeCoverageIgnore
+     */
+    public function getThrowErrorIfTriggersExist()
+    {
+        return $this->throwErrorIfTriggersExist;
+    }
+
+    /**
+     * @param mixed $throwErrorIfAuditTableExists
+     */
+    public function setThrowErrorIfAuditTableExists($throwErrorIfAuditTableExists)
+    {
+        $this->throwErrorIfAuditTableExists = $throwErrorIfAuditTableExists;
+    }
+
+    /**
+     * @param boolean $throwErrorIfTriggersExist
+     */
+    public function setThrowErrorIfTriggersExist($throwErrorIfTriggersExist)
+    {
+        $this->throwErrorIfTriggersExist = $throwErrorIfTriggersExist;
     }
 }
