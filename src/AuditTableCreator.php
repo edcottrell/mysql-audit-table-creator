@@ -134,11 +134,14 @@ class AuditTableCreator
      * (2) replaces the primary key (if any), (3) adds the audit-specific columns, and (4) adds a regular
      * key corresponding to the audited table's primary key (if any).
      *
-     * @returns string The SQL for the ALTER TABLE statement
+     * @returns string|null The SQL for the ALTER TABLE statement or null if no ALTER TABLE statement is needed
      * @since Version 0.0.1
      */
     private function addAuditTableColumnsAndKeys()
     {
+        if ($this->auditTableExists) {
+            return null;
+        }
         /** @noinspection SqlNoDataSourceInspection */
         $sql = "ALTER TABLE `{$this->auditTableName}`\n";
         if ($this->autoIncrementColumn) {

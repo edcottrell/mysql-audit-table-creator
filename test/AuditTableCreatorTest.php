@@ -247,6 +247,7 @@ class AuditTableCreatorTest extends \PHPUnit_Framework_TestCase
         $atc = new AuditTableCreator('table_with_existing_audit_table', self::$db);
         $sql = $atc->generateSQLStatements();
         $this->assertNotEmpty(preg_grep('/CREATE TABLE .*`audit_table_with_existing_audit_table`/', $sql));
+        $this->assertEmpty(preg_grep('/ALTER TABLE /', $sql));
     }
 
     /**
