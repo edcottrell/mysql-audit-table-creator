@@ -266,6 +266,18 @@ class AuditTableCreatorTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * Test that an exception is thrown if the base table does not exist
+     *
+     * @expectedException \UnexpectedValueException
+     * @expectedExceptionMessage Base table foo does not exist
+     */
+    public function testCheckTableExists_BaseTableDoesNotExist()
+    {
+        $atc = new AuditTableCreator('foo', self::$db);
+        $atc->generateSQLStatements();
+    }
+
+    /**
      * Test that no exception is thrown if the audit triggers error is enabled, but the triggers don't exist
      */
     public function testCheckWhetherTriggersExist_TriggersDoNotExist()

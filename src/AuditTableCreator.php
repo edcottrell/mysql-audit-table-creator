@@ -195,7 +195,7 @@ class AuditTableCreator
             $row = call_user_func(array($result, $this->fetchMethod));
         }
         if (!$baseTableExists) {
-            throw new \UnexpectedValueException('Base table does not exist');
+            throw new \UnexpectedValueException("Base table {$this->table} does not exist");
         }
         if ($this->auditTableExists && $this->throwErrorIfAuditTableExists) {
             throw new \Exception('Audit table already exists');
