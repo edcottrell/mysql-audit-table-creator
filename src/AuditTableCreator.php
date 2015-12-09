@@ -129,7 +129,7 @@ class AuditTableCreator
         $this->auditTableName = $auditTableName ?: 'audit_' . $table;
         $this->conn = $conn;
         $this->table = $table;
-        $this->auditTableComment = $auditTableComment ?: "Audit table created by PHP class Cereblitz\\AuditTableCreator to track changes to table {$table}";
+        $this->auditTableComment = $auditTableComment ?: "Audit table created by PHP class Cereblitz\\\\AuditTableCreator to track changes to table {$table}";
         // @codeCoverageIgnoreEnd
     }
 
