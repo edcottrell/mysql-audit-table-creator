@@ -65,6 +65,9 @@ class AuditTableCreator
     private $auditTableExists = false;
 
     /** @var string */
+    private $auditTableComment = null;
+
+    /** @var string */
     private $auditTableName = null;
 
     /** @var string|null */
@@ -112,9 +115,10 @@ class AuditTableCreator
      *                      on the database). It also needs to return a result object that implements either "fetch"
      *                      (PDO-style) or "fetch_array" (MySQLi-style).
      * @param string $auditTableName The default is audit_ORIGINAL_TABLE_NAME
+     * @param string $auditTableComment The default is "Audit table created by PHP class Cereblitz\AuditTableCreator to track changes to table {$table}"
      * @since Version 0.0.1
      */
-    public function __construct($table, $conn, $auditTableName = null)
+    public function __construct($table, $conn, $auditTableName = null, $auditTableComment = null)
     {
         // Make sure the connection is valid
         if (!method_exists($conn, 'query')) {
@@ -125,6 +129,7 @@ class AuditTableCreator
         $this->auditTableName = $auditTableName ?: 'audit_' . $table;
         $this->conn = $conn;
         $this->table = $table;
+        $this->auditTableComment = $auditTableComment ?: "Audit table created by PHP class Cereblitz\AuditTableCreator to track changes to table {$table}";
         // @codeCoverageIgnoreEnd
     }
 
@@ -143,7 +148,8 @@ class AuditTableCreator
             return null;
         }
         /** @noinspection SqlNoDataSourceInspection */
-        $sql = "ALTER TABLE `{$this->auditTableName}`\n";
+        $sql = "ALTER TABLE `{$this->auditTableName}`\n
+    COMMENT = '{$this->auditTableComment}',\n";
         if ($this->autoIncrementColumn) {
             $autoIncrementColumnName = preg_replace('/^\s*`([^`]+)`.*/', '$1', $this->autoIncrementColumn);
             $formerAutoIncrementColumnDefinitionWithoutAI = preg_replace('/\s+AUTO_INCREMENT/i', '', $this->autoIncrementColumn);
