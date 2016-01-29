@@ -11,6 +11,17 @@ Simply `include` or `require` the file `AuditTableCreator.php` in your PHP proje
 
 The constructor for AuditTableCreator is defined as:
 
+    /**
+     * @param string $table The table being audited
+     * @param \mysqli|\PDO|object $conn The connection to use (can be, e.g., a Cereblitz\DatabaseInterface, a mysqli,
+     *                      PDO, or any other object implementing a method "query" by which a query can be run directly
+     *                      on the database). It also needs to return a result object that implements either "fetch"
+     *                      (PDO-style) or "fetch_array" (MySQLi-style).
+     * @param string $auditTableName The default is audit_ORIGINAL_TABLE_NAME
+     * @param string $auditTableComment The default is "Audit table created by PHP class Cereblitz\AuditTableCreator to track changes to table {$table}"
+     * @since Version 0.0.1
+     */
+    public function __construct($table, $conn, $auditTableName = null, $auditTableComment = null)
 
 Adding auditing to a table requires two basic steps:
 
