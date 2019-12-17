@@ -77,7 +77,7 @@ class AuditTableCreatorTest extends \PHPUnit_Framework_TestCase
      * @param Exception|\Throwable $e
      * @throws Exception|\Throwable
      */
-    protected function onNotSuccessfulTest(Exception $e)
+    protected function onNotSuccessfulTest($e)
     {
         self::$preserveData = true;
         parent::onNotSuccessfulTest($e);
