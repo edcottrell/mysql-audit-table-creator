@@ -1,12 +1,12 @@
-#Cereblitz Audit Table Creator
+# Cereblitz Audit Table Creator
 
 This is a PHP class to log changes to the data in a MySQL table. MyISAM and InnoDB tables are supported; other engines may or may not work correctly.
 
-##Installation
+## Installation
 
 Simply `include` or `require` the file `AuditTableCreator.php` in your PHP project.
 
-##Usage
+## Usage
 
 The constructor for AuditTableCreator is defined as:
 
@@ -45,7 +45,7 @@ But note that the class will still need to run some queries to prepare these str
 
 When constructing the class, you may pass an optional third parameter to specify the name of the audit table. By default, it is `audit_YOUR_TABLE`, where `YOUR_TABLE` is the name of the original table.
 
-##Testing and Development
+## Testing and Development
 
 Testing and development require a few composer and grunt packages. To contribute to this repository or run unit tests on it, run these commands:
 
