@@ -43,7 +43,7 @@ namespace Cereblitz;
  * the data in the original table. Without a primary key, no version history is possible.
  *
  * @author Ed Cottrell <blitzmaster@cereblitz.com>
- * @copyright Copyright (c) 2015 Cereblitz LLC
+ * @copyright Copyright (c) 2015 Cereblitz LLC and Ed Cottrell
  * @license MIT License
  * @link http://dev.mysql.com/doc/refman/5.7/en/create-trigger.html
  * @package Cereblitz Audit Table Creator
