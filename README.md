@@ -1,4 +1,4 @@
-# Cereblitz Audit Table Creator
+# MySQL Audit Table Creator
 
 This is a PHP class to log changes to the data in a MySQL table. MyISAM and InnoDB tables are supported; other engines may or may not work correctly.
 
