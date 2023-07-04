@@ -46,7 +46,7 @@ namespace Cereblitz;
  * @copyright Copyright (c) 2015 Cereblitz LLC and Ed Cottrell
  * @license MIT License
  * @link http://dev.mysql.com/doc/refman/5.7/en/create-trigger.html
- * @package Cereblitz Audit Table Creator
+ * @package MySQL Audit Table Creator
  *
  * @todo Add optional support for foreign key constraints
  */
