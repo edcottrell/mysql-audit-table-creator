@@ -1,15 +1,13 @@
 {
   "name": "edcottrell/mysql-audit-table-creator-php",
-  "description": "Cereblitz MySQL Audit Table Creator",
+  "description": "MySQL Audit Table Creator",
   "authors": [
     {
-      "name": "Ed Cottrell, Cereblitz LLC",
-      "email": "blitzmaster@cereblitz.com",
-      "homepage": "https://cereblitz.com",
-      "role": "Owner, Developer"
+      "name": "Ed Cottrell",
+      "homepage": "https://edcottrell.com"
     }
   ],
-  "license": "proprietary",
+  "license": "MIT",
   "require-dev": {
     "phpunit/phpunit": "5.0.*",
     "johnkary/phpunit-speedtrap": "~1.0@dev",
